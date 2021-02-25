@@ -6,158 +6,28 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
-library(skimr)
 ```
 
-
-Good idea to read in the example data sets first. We will be using the dmf demo data. (I really need to learn more about the differences between these data sets. Where they come from, and so on. Perhaps this should become the Big Data chapter in the Primer?)
-
-
-```{r}
-demo <- read_csv("~/data/census/censoc_dmf_demo_v1/censoc_dmf_demo_v1.csv",
-                   col_types = cols(.default = col_character(),
-                                    bmonth = col_double(),
-                                    byear = col_double(),
-                                    dmonth = col_double(),
-                                    dyear = col_double(),
-                                    death_age = col_double(),
-                                    weight = col_double(),
-                                    perwt = col_double(),
-                                    age = col_double(),
-                                    incwage = col_double(),
-                                    occ = col_double(),
-                                    occscore = col_double(),
-                                    rent = col_double()))
-```
-
-Use all our favorite tricks with new data: print(demo), print(demo, width = 200), demo %>% sample_n(10), glimpse(demo), summary(demo), names(demo).
-
-```{r}
-summary(demo)
-```
-
-```{r}
-skim(demo)
-```
-
-
-Other fun commands:
-
-```{r}
-demo %>% 
-  count(hispan)
-```
-
-Not what we expected!
-
-```{r}
-demo %>% 
-  count(race)
-```
-
-Some interesting races!
-
-
-```{r}
-demo %>% 
-  count(statefip, sort = TRUE)
-```
-
-Why are there only 49 states? Keep in mind that this is sample data.
-
-```{r}
-demo %>% 
-  arrange(desc(incwage)) %>% 
-  select(incwage, everything())
-```
-
-People are always lying! Should have caught this with summary().
-
-## Plots
-
-What plot do we want to make? Ask a student to guide me through the process of making a histogram of death year. Note how this plot makes us think there is a problem. But there isn't.
-
-```{r}
-demo %>% 
-  ggplot(aes(x = dyear)) +
-    geom_histogram()
-```
-
-Have the groups investigate this mystery. Check out: https://tinlizzie.org/histograms/. 
-
-Make a plot of dmonth. Use something besides histogram. What patterns do you see? Why?
-
-```{r}
-demo %>% 
-  ggplot(aes(x = dmonth)) +
-    geom_bar()
-```
-
-But we don't want to look at the above plots for just the sample data. We want to look at all the data!
 
 ```{r big_read, cache = TRUE}
+# The real data does not have the same columns as the demo data. Very annoying!
+# Note you can use the n_max argument to read_csv() to just read in the first
+# 100 or so rows, thereby quickly getting back the message about the column
+# types. Then, we use this new listing of types. Use cache = TRUE so that you
+# don't have to repeat long calculations every time you reknit the document.
+
 x <- read_csv("~/data/census/censoc_dmf_v2/censoc_dmf_v2.csv",
-                   col_types = cols(.default = col_character(),
-                                    bmonth = col_double(),
+                   col_types = cols(HISTID = col_character(),
                                     byear = col_double(),
-                                    dmonth = col_double(),
+                                    bmonth = col_double(),
                                     dyear = col_double(),
+                                    dmonth = col_double(),
                                     death_age = col_double(),
+                                    link_abe_exact_conservative = col_double(),
                                     weight = col_double(),
-                                    perwt = col_double(),
-                                    age = col_double(),
-                                    incwage = col_double(),
-                                    occ = col_double(),
-                                    occscore = col_double(),
-                                    rent = col_double()))
-```
-
-Some tricks for working with big data. First, use cache = TRUE so that you don't have to repeat long calculations every time you reknit the document. Second, once you read in the data, select a 1% sample of random rows. Work with that for quicker turnaround. Once you have code which works, try it on the full data set. 7.5 million rows can take some time!
-
-```{r big_plot}
-x %>% 
-  ggplot(aes(x = dmonth)) +
-    geom_bar()
-```
-
-Can't wait so long to reknit each time we make a change in the labs(). So, take a sample of the big data. Show how sample_n() is not deprecated, but also not preferred.
-
-```{r create_small}
-small <- x %>% 
-  slice_sample(prop = 0.01)
-```
-
-Let's make a nice looking plot. Are months equally dangerous? Does not look that way! Does that relative dangerous vary by age. My prior is that January relative to July is much more dangerous for older people than for young people.
-
-
-```{r ratio_calc}
-ratio_tbl <- x %>% 
-  group_by(dyear, dmonth) %>% 
-  count() %>% 
-  pivot_wider(names_from = dmonth, 
-              names_prefix = "dmonth_", 
-              values_from = n) %>% 
-  mutate(jan_july_ratio = dmonth_1/dmonth_7)
+                                    weight_conservative = col_double()))
 ```
 
 
 
-```{r plot_ratio}
-ratio_tbl %>% 
-  ggplot(aes(dyear, jan_july_ratio)) +
-    geom_point() +
-    geom_smooth(method = "lm",
-                formula = y ~ x) +
-    labs(title = "Mortality Over Time",
-         subtitle = "Why are Januaries becoming more dangerous?",
-         x = "Year of Death",
-         y = "Ratio of January to July Deaths",
-         caption = "Source: CenSoc")
-
-```
-
-
-
-
-Does January cause more deaths? Apply the Rubin Causal Model.
 
