@@ -32,3 +32,42 @@ x <- read_csv("~/data/census/censoc_dmf_v2/censoc_dmf_v2.csv",
 create a 1% sample 
 plot of dmonth 
 
+
+```{r}
+# all questions begin with a tibble: which tibble? For sample_frac(), could also use slice_sample(prop = .01)
+# working with big data: get the data, take a little sample and get everything working, then sub in the big data
+
+small <- x %>% 
+  sample_frac(1/100) 
+ 
+```
+
+```{r}
+
+# to go from data to a given plot, one tactic is to pick one point, and disect what's needed to get that one point (or place on the plot)
+# revisit summarize 
+
+small %>%
+  filter(dmonth %in% c(1, 7)) %>%
+  select(dmonth, dyear) %>%
+  group_by(dyear, dmonth) %>%
+  summarize(deaths = n()) %>%
+  pivot_wider(names_from = dmonth, 
+              values_from = deaths) %>%
+  rename(jan = "1", july = "7") %>%
+  mutate(ratio = jan/july) %>%
+  
+  ggplot(mapping = aes(x = , dyear, 
+                       y = ratio)) +
+  geom_point() +
+  geom_smooth(method = 'lm', 
+              formula = 'y ~ x') +
+  labs(title = "Mortality over Time",
+       subtitle = "Why are Januaries becoming more dangerous?",
+       y = "Ratio of January to July Deaths",
+       x = "Year of Death",
+       caption = "Source: CenSoc")
+
+```
+
+
