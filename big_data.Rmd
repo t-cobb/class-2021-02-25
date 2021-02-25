@@ -47,7 +47,7 @@ small <- x %>%
 # to go from data to a given plot, one tactic is to pick one point, and disect what's needed to get that one point (or place on the plot)
 # revisit summarize 
 
-small %>%
+x %>%
   filter(dmonth %in% c(1, 7)) %>%
   select(dmonth, dyear) %>%
   group_by(dyear, dmonth) %>%
